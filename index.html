@@ -6,7 +6,6 @@
     <title>Reserva - BOCA BESTIA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Tipografía geométrica Montserrat -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;0,900;1,900&display=swap" rel="stylesheet">
@@ -17,7 +16,6 @@
             border-top: 1px solid transparent; 
             font-family: 'Montserrat', sans-serif; 
         } 
-        /* Para que el calendario se vea blanco sobre fondo negro */
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
     </style>
 </head>
@@ -143,10 +141,6 @@
         </div>
     </div>
 
-
-    <!-- =================================================================== -->
-    <!-- BLOQUE 1: CÓDIGO VISUAL (NUNCA FALLA)                               -->
-    <!-- =================================================================== -->
     <script>
         let bloqueosGlobales = [];
         let diasCerradosGlobales = [];
@@ -247,17 +241,11 @@
         }
 
         actualizarHoras('input-fecha', 'input-hora');
-
     </script>
 
-    <!-- =================================================================== -->
-    <!-- BLOQUE 2: LÓGICA DE BD (AISLADO PARA QUE NO ROMPA LO VISUAL)        -->
-    <!-- =================================================================== -->
     <script>
-        // TUS NUEVAS CLAVES ESTÁN AQUÍ
         const SUPABASE_URL = 'https://ydstfbsqbmmygnojmmss.supabase.co'; 
         const SUPABASE_ANON_KEY = 'sb_publishable_aZzqNb41ir-mSng2lMUCPg_pudR7IAA';
-        
         const TELEGRAM_BOT_TOKEN = '8789184996:AAFV2JsCWBcXo-IhC0YYzQuEhuhWPUgHK6k';
         const TELEGRAM_CHAT_ID = '6519651464';
 
