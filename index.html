@@ -6,7 +6,7 @@
     <title>Reserva - BOCA BESTIA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Importamos la fuente Montserrat (geométrica y gruesa) -->
+    <!-- Tipografía geométrica Montserrat -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;0,900;1,900&display=swap" rel="stylesheet">
@@ -15,15 +15,14 @@
             margin: 0; 
             padding: 0; 
             border-top: 1px solid transparent; 
-            font-family: 'Montserrat', sans-serif; /* Aplicamos la tipografía */
+            font-family: 'Montserrat', sans-serif; 
         } 
-        /* Hacemos que el icono del calendario se vea bien sobre fondo negro */
+        /* Para que el calendario se vea blanco sobre fondo negro */
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
     </style>
 </head>
 <body class="bg-black relative text-white">
 
-    <!-- Cabecera fundida con el fondo -->
     <header class="bg-black text-white py-6 px-4 text-center">
         <h1 class="text-4xl md:text-5xl font-black uppercase italic tracking-wider">
             <span class="text-white">Boca</span> <span class="text-[#E60000]">Bestia</span>
@@ -255,6 +254,7 @@
     <!-- BLOQUE 2: LÓGICA DE BD (AISLADO PARA QUE NO ROMPA LO VISUAL)        -->
     <!-- =================================================================== -->
     <script>
+        // TUS NUEVAS CLAVES ESTÁN AQUÍ
         const SUPABASE_URL = 'https://ydstfbsqbmmygnojmmss.supabase.co'; 
         const SUPABASE_ANON_KEY = 'sb_publishable_aZzqNb41ir-mSng2lMUCPg_pudR7IAA';
         
