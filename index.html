@@ -3,28 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reserva - Restaurante de Pablo</title>
+    <title>Reserva - BOCA BESTIA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Importamos la fuente Montserrat (geométrica y gruesa) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;0,900;1,900&display=swap" rel="stylesheet">
     <style> 
-        body { margin: 0; padding: 0; border-top: 1px solid transparent; } 
+        body { 
+            margin: 0; 
+            padding: 0; 
+            border-top: 1px solid transparent; 
+            font-family: 'Montserrat', sans-serif; /* Aplicamos la tipografía */
+        } 
         /* Hacemos que el icono del calendario se vea bien sobre fondo negro */
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
     </style>
 </head>
 <body class="bg-black relative text-white">
 
-    <header class="bg-[#E60000] text-white py-6 px-4 text-center border-b-8 border-black">
-        <h1 class="text-4xl md:text-5xl font-black uppercase italic tracking-wider">Restaurante de Pablo</h1>
-        <p class="mt-2 font-bold uppercase text-sm md:text-base text-white">Reserva tu mesa al instante</p>
+    <!-- Cabecera fundida con el fondo -->
+    <header class="bg-black text-white py-6 px-4 text-center">
+        <h1 class="text-4xl md:text-5xl font-black uppercase italic tracking-wider">
+            <span class="text-white">Boca</span> <span class="text-[#E60000]">Bestia</span>
+        </h1>
+        <p class="mt-2 font-bold uppercase text-sm md:text-base text-gray-300">Reserva tu mesa al instante</p>
     </header>
 
-    <main class="max-w-xl mx-auto pt-8 px-4 pb-10">
+    <main class="max-w-xl mx-auto pt-4 px-4 pb-10">
         <div class="bg-black p-6 md:p-8 rounded-xl border-4 border-[#E60000] shadow-[6px_6px_0px_#E60000]">
             
             <div class="flex flex-col md:flex-row justify-between md:items-center border-b-4 border-[#E60000] pb-4 mb-6 gap-4 md:gap-0">
-                <h2 id="titulo-principal" class="text-3xl font-black uppercase text-[#E60000] text-center md:text-left">Reservar</h2>
-                <button id="btn-cambiar-vista" onclick="cambiarVista()" class="text-sm font-black bg-black text-[#E60000] px-4 py-3 md:py-2 rounded-lg border-2 border-[#E60000] shadow-[4px_4px_0px_#E60000] active:translate-y-1 active:shadow-none uppercase transition w-full md:w-auto">
+                <h2 id="titulo-principal" class="text-3xl font-black uppercase text-white text-center md:text-left">Reservar</h2>
+                <button id="btn-cambiar-vista" onclick="cambiarVista()" class="text-sm font-black bg-black text-white px-4 py-3 md:py-2 rounded-lg border-2 border-[#E60000] shadow-[4px_4px_0px_#E60000] active:translate-y-1 active:shadow-none uppercase transition w-full md:w-auto">
                     Modificar Reserva
                 </button>
             </div>
@@ -243,11 +255,9 @@
     <!-- BLOQUE 2: LÓGICA DE BD (AISLADO PARA QUE NO ROMPA LO VISUAL)        -->
     <!-- =================================================================== -->
     <script>
-        // Credenciales nuevas de Supabase integradas
         const SUPABASE_URL = 'https://ydstfbsqbmmygnojmmss.supabase.co'; 
         const SUPABASE_ANON_KEY = 'sb_publishable_aZzqNb41ir-mSng2lMUCPg_pudR7IAA';
         
-        // Telegram se mantiene igual
         const TELEGRAM_BOT_TOKEN = '8789184996:AAFV2JsCWBcXo-IhC0YYzQuEhuhWPUgHK6k';
         const TELEGRAM_CHAT_ID = '6519651464';
 
