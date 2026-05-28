@@ -33,12 +33,14 @@
                 </button>
             </div>
 
+            <!-- VISTA SUSPENDIDA (Kill Switch) -->
             <div id="vista-suspendida" class="hidden text-center py-10 space-y-4">
                 <div class="text-6xl mb-4">🚧</div>
                 <h3 class="text-2xl font-black uppercase text-[#E60000]">Servicio No Disponible</h3>
                 <p class="text-white font-bold">El sistema de reservas online se encuentra temporalmente desactivado para este local.</p>
             </div>
 
+            <!-- VISTA 1: FORMULARIO -->
             <div id="vista-reservar" class="space-y-4 font-bold">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -73,6 +75,7 @@
                 </button>
             </div>
 
+            <!-- VISTA 2: BUSCAR IDENTIFICADOR -->
             <div id="vista-modificar" class="hidden space-y-4 font-bold">
                 <p class="text-sm text-white mb-4 text-center md:text-left">Introduce tu identificador de reserva <b class="text-[#E60000]">todo junto</b> (sin espacios ni tildes):</p>
                 <div>
@@ -86,6 +89,7 @@
                 </button>
             </div>
 
+            <!-- VISTA 3: GESTIONAR -->
             <div id="vista-gestion" class="hidden space-y-4 font-bold">
                 <div class="bg-black p-4 rounded border-2 border-[#E60000] text-center mb-4">
                     <p class="text-sm text-white uppercase">Reserva Actual</p>
@@ -115,6 +119,7 @@
         </div>
     </main>
 
+    <!-- MODAL RESERVA HECHA -->
     <div id="modal-identificador" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-50">
         <div class="bg-black border-4 border-[#E60000] p-6 md:p-8 rounded-xl max-w-md w-full text-center shadow-[8px_8px_0px_#E60000]">
             <h3 class="text-3xl md:text-4xl font-black text-[#E60000] uppercase mb-2">¡Confirmada!</h3>
@@ -131,7 +136,6 @@
         </div>
     </div>
 
-    <!-- CÓDIGO VISUAL -->
     <script>
         let bloqueosGlobales = [];
         let diasCerradosGlobales = [];
@@ -144,12 +148,21 @@
             const letras = document.getElementById('id-letras').innerText;
             navigator.clipboard.writeText(nombre + tel + letras).then(() => {
                 const btn = document.getElementById('btn-copiar');
-                btn.innerText = "✅ ¡COPIADO!"; btn.classList.replace('bg-[#E60000]', 'bg-black'); btn.classList.replace('border-white', 'border-[#E60000]');
-                setTimeout(() => { btn.innerText = "📋 Copiar ID"; btn.classList.replace('bg-black', 'bg-[#E60000]'); btn.classList.replace('border-[#E60000]', 'border-white'); }, 2000);
-            }).catch(err => { alert("❌ No se pudo copiar. Haz una captura de pantalla."); });
+                btn.innerText = "✅ ¡COPIADO!";
+                btn.classList.replace('bg-[#E60000]', 'bg-black');
+                btn.classList.replace('border-white', 'border-[#E60000]');
+                setTimeout(() => { 
+                    btn.innerText = "📋 Copiar ID"; 
+                    btn.classList.replace('bg-black', 'bg-[#E60000]'); 
+                    btn.classList.replace('border-[#E60000]', 'border-white');
+                }, 2000);
+            }).catch(err => { alert("❌ No se pudo copiar."); });
         }
 
-        function normalizarTexto(str) { return (!str) ? '' : str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, '').toUpperCase(); }
+        function normalizarTexto(str) {
+            if(!str) return '';
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        }
 
         function colorearTexto(val) {
             val = normalizarTexto(val);
@@ -208,7 +221,6 @@
         actualizarHoras('input-fecha', 'input-hora');
     </script>
 
-    <!-- CÓDIGO BD CON AUTO-REPARACIÓN 🔥 -->
     <script>
         const SUPABASE_URL = 'https://ydstfbsqbmmygnojmmss.supabase.co'; 
         const SUPABASE_ANON_KEY = 'sb_publishable_aZzqNb41ir-mSng2lMUCPg_pudR7IAA';
@@ -217,37 +229,15 @@
 
         function getSupabase() { return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
 
-        async function autoRepararBD() {
-            const sp = getSupabase();
-            console.log("Comprobando salud de la BD...");
-            
-            // Reparar Configuración
-            let { data: config } = await sp.from('configuracion_saas').select('*').eq('id', 1).single();
-            if (!config) await sp.from('configuracion_saas').insert([{ id: 1, estado_suscripcion: 'activo' }]);
-            
-            // Reparar Días Cerrados
-            let { data: dias } = await sp.from('dias_cerrados').select('*').eq('id', 1).single();
-            if (!dias) await sp.from('dias_cerrados').insert([{ id: 1, dias: '' }]);
-
-            // Reparar Mesas
-            let { data: mesas } = await sp.from('mesas').select('id');
-            if (!mesas || mesas.length === 0) {
-                console.log("BD Vacía: Autogenerando mesas...");
-                let nuevasMesas = [];
-                for(let i=0; i<20; i++) nuevasMesas.push({zona: 'Interior', estado_actual: 'libre'});
-                for(let i=0; i<20; i++) nuevasMesas.push({zona: 'Terraza', estado_actual: 'libre'});
-                await sp.from('mesas').insert(nuevasMesas);
-            }
-        }
-
         async function prepararEntorno() {
             try {
-                await autoRepararBD(); // LA MAGIA SALVADORA
-
                 const sp = getSupabase();
                 const { data: config } = await sp.from('configuracion_saas').select('estado_suscripcion').eq('id', 1).single();
                 if (config && config.estado_suscripcion === 'suspendido') {
                     document.getElementById('vista-reservar').classList.add('hidden');
+                    document.getElementById('vista-modificar').classList.add('hidden');
+                    document.getElementById('vista-gestion').classList.add('hidden');
+                    document.getElementById('btn-cambiar-vista').classList.add('hidden');
                     document.getElementById('vista-suspendida').classList.remove('hidden');
                     return; 
                 }
@@ -259,9 +249,9 @@
 
                 if (respBloqueos.data) bloqueosGlobales = respBloqueos.data;
                 if (respDias.data && respDias.data.dias) diasCerradosGlobales = respDias.data.dias.split(',');
-                actualizarHoras('input-fecha', 'input-hora');
 
-            } catch (err) { console.warn("Modo offline activo."); }
+                actualizarHoras('input-fecha', 'input-hora');
+            } catch (err) { console.warn("Modo offline visual."); }
         }
 
         async function procesarReserva() {
@@ -271,51 +261,51 @@
             const nombre = document.getElementById('input-nombre').value.trim();
             const telefono = document.getElementById('input-telefono').value.trim();
 
-            if(!fecha || !hora || !nombre || !telefono) return alert("⚠️ Rellena tu Nombre y Teléfono.");
+            if(!fecha || !hora || !nombre || !telefono) return alert("⚠️ Rellena tu Nombre y Teléfono obligatoriamente.");
 
-            if (bloqueosGlobales.find(b => b.fecha === fecha && (b.zona === 'Ambas' || b.zona === zona))) {
-                return alert(`❌ La zona de ${zona} está cerrada el día ${fecha}.`);
-            }
+            let zonaBloqueada = bloqueosGlobales.find(b => b.fecha === fecha && (b.zona === 'Ambas' || b.zona === zona));
+            if (zonaBloqueada) return alert(`❌ Lo sentimos, la zona de ${zona} está cerrada el día ${fecha}.`);
 
             const btn = document.getElementById('btn-reservar');
             btn.innerHTML = 'Enviando...'; btn.disabled = true;
 
-            const letras = Math.random().toString(36).substring(2, 5).toUpperCase();
+            const letrasAleatorias = Math.random().toString(36).substring(2, 5).toUpperCase();
             const nombreLimpio = normalizarTexto(nombre);
+            const identificadorCompleto = `${nombreLimpio}${telefono}${letrasAleatorias}`;
 
             try {
                 const sp = getSupabase();
-                // Si justo aquí no hay mesas por algún bug, las forzamos a crearse
-                let { data: mesasZona } = await sp.from('mesas').select('id').eq('zona', zona);
-                if (!mesasZona || mesasZona.length === 0) {
-                    await autoRepararBD();
-                    let retry = await sp.from('mesas').select('id').eq('zona', zona);
-                    mesasZona = retry.data;
+                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: `🍔 *NUEVA RESERVA BOCA BESTIA* 🍔\n👤 *Nombre:* ${nombre}\n📞 *Tlf:* ${telefono}\n📅 *Día:* ${fecha}\n⏰ *Hora:* ${hora}\n📍 *Zona:* ${zona}\n🔑 *ID:* ${identificadorCompleto}`, parse_mode: 'Markdown' }) });
+
+                const { data: mesasZona, error: errMesas } = await sp.from('mesas').select('id').eq('zona', zona);
+                if (errMesas || !mesasZona || mesasZona.length === 0) {
+                    alert("❌ No hay mesas en la Base de Datos. Ejecuta el SQL de instalación.");
+                    btn.innerHTML = 'Confirmar Reserva'; btn.disabled = false; return;
                 }
 
                 const { data: reservasDia } = await sp.from('reservas').select('mesa_id, hora_inicio').eq('fecha', fecha);
                 const horaSol = new Date(`${fecha}T${hora}:00`);
-                let mesaAsignada = (mesasZona || []).find(m => {
+                let mesaAsignada = mesasZona.find(m => {
                     const reservasMesa = (reservasDia || []).filter(r => r.mesa_id === m.id);
                     return !reservasMesa.some(r => Math.abs((horaSol - new Date(`${fecha}T${r.hora_inicio}`)) / 60000) < 150);
                 });
 
                 if (!mesaAsignada) {
-                    alert(`❌ No quedan mesas libres en ${zona} a esa hora.`);
+                    alert(`❌ Lo sentimos, no quedan mesas libres en ${zona} a esa hora.`);
                     btn.innerHTML = 'Confirmar Reserva'; btn.disabled = false; return;
                 }
 
-                await sp.from('reservas').insert([{ mesa_id: mesaAsignada.id, nombre_cliente: nombre, telefono_cliente: telefono, fecha: fecha, hora_inicio: hora + ':00', codigo_secreto: letras }]);
+                const { error: insertError } = await sp.from('reservas').insert([{ mesa_id: mesaAsignada.id, nombre_cliente: nombre, telefono_cliente: telefono, fecha: fecha, hora_inicio: hora + ':00', codigo_secreto: letrasAleatorias }]);
 
-                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: `🍔 *NUEVA RESERVA* 🍔\n👤 ${nombre}\n📞 ${telefono}\n📅 ${fecha}\n⏰ ${hora}\n📍 ${zona}\n🔑 *ID:* ${nombreLimpio}${telefono}${letras}`, parse_mode: 'Markdown' }) });
+                if (insertError) throw insertError;
 
                 document.getElementById('id-nombre').innerText = nombreLimpio;
                 document.getElementById('id-tel').innerText = telefono;
-                document.getElementById('id-letras').innerText = letras;
+                document.getElementById('id-letras').innerText = letrasAleatorias;
                 document.body.style.overflow = 'hidden';
                 document.getElementById('modal-identificador').classList.remove('hidden');
 
-            } catch (err) { alert("❌ Error de conexión al reservar."); btn.innerHTML = 'Confirmar Reserva'; btn.disabled = false; }
+            } catch (err) { alert("❌ Error de red."); btn.innerHTML = 'Confirmar Reserva'; btn.disabled = false; }
         }
 
         async function buscarReserva() {
@@ -325,22 +315,24 @@
 
             try {
                 const sp = getSupabase();
-                const { data: reservas } = await sp.from('reservas').select('*');
+                const { data: reservas, error: errorBD } = await sp.from('reservas').select('*');
+                if(errorBD) throw errorBD; 
                 const { data: mesas } = await sp.from('mesas').select('id, zona');
 
-                const r = (reservas || []).find(r => normalizarTexto(r.nombre_cliente) + normalizarTexto(r.telefono_cliente) + normalizarTexto(r.codigo_secreto) === inputVal);
-                if(!r) { alert("❌ No hemos encontrado tu reserva."); btn.innerHTML = 'Buscar mi reserva'; btn.disabled = false; return; }
+                const reservaEncontrada = (reservas || []).find(r => normalizarTexto(r.nombre_cliente) + normalizarTexto(r.telefono_cliente) + normalizarTexto(r.codigo_secreto) === inputVal);
+                if(!reservaEncontrada) { alert("❌ No hemos encontrado tu reserva."); btn.innerHTML = 'Buscar mi reserva'; btn.disabled = false; return; }
 
-                miReservaActual = r;
-                miZonaActual = mesas.find(m => m.id === r.mesa_id)?.zona || 'Interior';
+                miReservaActual = reservaEncontrada;
+                const mesaAsignada = mesas.find(m => m.id === miReservaActual.mesa_id);
+                miZonaActual = mesaAsignada ? mesaAsignada.zona : 'Sin Zona';
 
-                document.getElementById('gest-nombre').innerText = r.nombre_cliente;
+                document.getElementById('gest-nombre').innerText = miReservaActual.nombre_cliente;
                 document.getElementById('gest-zona').innerText = miZonaActual;
                 document.getElementById('vista-modificar').classList.add('hidden');
                 document.getElementById('vista-gestion').classList.remove('hidden');
-                document.getElementById('gest-fecha').value = r.fecha;
+                document.getElementById('gest-fecha').value = miReservaActual.fecha;
                 actualizarHoras('gest-fecha', 'gest-hora');
-                setTimeout(() => { document.getElementById('gest-hora').value = r.hora_inicio.substring(0,5); }, 100);
+                setTimeout(() => { document.getElementById('gest-hora').value = miReservaActual.hora_inicio.substring(0,5); }, 100);
 
             } catch (error) { alert("❌ Fallo conectando a Supabase."); }
             btn.innerHTML = 'Buscar mi reserva'; btn.disabled = false;
@@ -351,7 +343,8 @@
             const nuevaHora = document.getElementById('gest-hora').value;
             if(!nuevaFecha || !nuevaHora) return;
 
-            if (bloqueosGlobales.find(b => b.fecha === nuevaFecha && (b.zona === 'Ambas' || b.zona === miZonaActual))) return alert(`❌ Lo sentimos, la zona está cerrada el ${nuevaFecha}.`);
+            let zonaBloqueada = bloqueosGlobales.find(b => b.fecha === nuevaFecha && (b.zona === 'Ambas' || b.zona === miZonaActual));
+            if (zonaBloqueada) return alert(`❌ Lo sentimos, la zona está cerrada el ${nuevaFecha}.`);
 
             const btn = document.getElementById('btn-actualizar'); btn.innerHTML = 'Guardando...'; btn.disabled = true;
 
@@ -369,6 +362,8 @@
                 if(!nuevaMesa) { alert(`❌ No hay mesas libres en ${miZonaActual} para esa nueva hora.`); btn.innerHTML = 'Guardar Cambios'; btn.disabled = false; return; }
 
                 await sp.from('reservas').update({ fecha: nuevaFecha, hora_inicio: nuevaHora + ':00', mesa_id: nuevaMesa.id }).eq('id', miReservaActual.id);
+                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: `✏️ *RESERVA MODIFICADA* ✏️\n👤 ${miReservaActual.nombre_cliente}\n🔄 *NUEVA FECHA:* ${nuevaFecha} a las ${nuevaHora}`, parse_mode: 'Markdown' }) });
+
                 alert("✅ Tu reserva se ha actualizado."); window.location.reload();
             } catch (e) { alert("❌ Fallo al actualizar."); btn.innerHTML = 'Guardar Cambios'; btn.disabled = false; }
         }
@@ -376,8 +371,10 @@
         async function cancelarReserva() {
             if(!confirm("⚠️ ¿Estás seguro de que quieres cancelar tu reserva?")) return;
             const btn = document.getElementById('btn-cancelar'); btn.innerHTML = 'Cancelando...'; btn.disabled = true;
+
             try {
                 await getSupabase().from('reservas').delete().eq('id', miReservaActual.id);
+                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: `❌ *RESERVA CANCELADA* ❌\n👤 ${miReservaActual.nombre_cliente}\n📅 Iba a ser el ${miReservaActual.fecha}`, parse_mode: 'Markdown' }) });
                 alert("🗑️ Tu reserva ha sido cancelada."); window.location.reload();
             } catch (e) { alert("❌ Error al cancelar."); btn.innerHTML = '❌ Cancelar Reserva'; btn.disabled = false; }
         }
