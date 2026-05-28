@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camareros - BOCA BESTIA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen font-sans pb-20">
+
+    <header class="bg-black py-4 px-4 border-b-2 border-red-600 sticky top-0 z-50">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl font-black uppercase text-red-600">Panel Camareros</h1>
+            <span id="estado" class="text-red-500 font-bold text-sm uppercase">Cargando...</span>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="verPestaña('aforo')" id="tab-aforo" class="flex-1 bg-red-600 text-white font-black py-3 rounded uppercase text-sm">Aforo Vivo</button>
+            <button onclick="verPestaña('reservas')" id="tab-reservas" class="flex-1 bg-gray-800 text-gray-400 font-bold py-3 rounded uppercase text-sm border-2 border-gray-700">Lista Reservas</button>
+        </div>
+    </header>
+
+    <main class="p-4 max-w-4xl mx-auto mt-2">
+        <div id="vista-aforo" class="space-y-6 block">
+            <!-- INTERIOR -->
+            <div class="bg-gray-800 p-6 rounded-2xl border-2 border-gray-600 text-center">
+                <h2 class="text-3xl font-black text-white uppercase mb-2">Interior</h2>
+                <div class="text-7xl font-black mb-6" id="num-interior">- <span class="text-4xl text-gray-500">/ -</span></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="ocupar('Interior')" id="btn-oc-int" class="bg-red-600 text-white text-xl font-black py-6 rounded-xl uppercase">Ocupar</button>
+                    <button onclick="liberar('Interior')" id="btn-lib-int" class="bg-green-600 text-white text-xl font-black py-6 rounded-xl uppercase">Liberar</button>
+                </div>
+            </div>
+            <!-- TERRAZA -->
+            <div class="bg-gray-800 p-6 rounded-2xl border-2 border-gray-600 text-center">
+                <h2 class="text-3xl font-black text-white uppercase mb-2">Terraza</h2>
+                <div class="text-7xl font-black mb-6" id="num-terraza">- <span class="text-4xl text-gray-500">/ -</span></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="ocupar('Terraza')" id="btn-oc-ter" class="bg-red-600 text-white text-xl font-black py-6 rounded-xl uppercase">Ocupar</button>
+                    <button onclick="liberar('Terraza')" id="btn-lib-ter" class="bg-green-600 text-white text-xl font-black py-6 rounded-xl uppercase">Liberar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="vista-reservas" class="hidden space-y-4">
+            <div class="bg-gray-800 p-4 rounded-xl border-2 border-gray-600">
+                <input type="date" id="input-fecha-lista" onchange="descargarListaReservas()" class="w-full bg-gray-900 border-2 border-gray-500 p-2 md:p-4 rounded text-white font-bold focus:outline-none text-lg">
+            </div>
+            <div id="caja-reservas" class="space-y-4 mt-4"><p class="text-center font-bold text-gray-500">Cargando...</p></div>
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://ydstfbsqbmmygnojmmss.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'sb_publishable_aZzqNb41ir-mSng2lMUCPg_pudR7IAA';
+        
+        let todasLasMesas = [];
+        let reservasDeHoy = [];
+
+        function verPestaña(c) {
+            ['aforo', 'reservas'].forEach(p => {
+                document.getElementById(`vista-${p}`).classList.add('hidden');
+                document.getElementById(`tab-${p}`).className = "flex-1 bg-gray-800 text-gray-400 font-bold py-3 rounded uppercase text-sm border-2 border-gray-700";
+            });
+            document.getElementById(`vista-${c}`).classList.remove('hidden');
+            document.getElementById(`tab-${c}`).className = "flex-1 bg-red-600 text-white font-black py-3 rounded uppercase text-sm";
+            if(c === 'reservas') {
+                if(!document.getElementById('input-fecha-lista').value) document.getElementById('input-fecha-lista').value = new Date().toISOString().split('T')[0];
+                descargarListaReservas();
+            }
+        }
+
+        async function actualizarDatos() {
+            try {
+                const sp = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                const hoy = new Date().toISOString().split('T')[0];
+
+                const resMesas = await sp.from('mesas').select('*');
+                todasLasMesas = resMesas.data || [];
+                
+                // AUTO HEALING (Si no hay mesas, las crea solo)
+                if(todasLasMesas.length === 0) {
+                    let n = [];
+                    for(let i=0; i<20; i++) n.push({zona:'Interior', estado_actual:'libre'}, {zona:'Terraza', estado_actual:'libre'});
+                    await sp.from('mesas').insert(n);
+                    const retry = await sp.from('mesas').select('*');
+                    todasLasMesas = retry.data || [];
+                }
+
+                const resReservas = await sp.from('reservas').select('*').eq('fecha', hoy);
+                reservasDeHoy = resReservas.data || [];
+
+                let iLib=0, iTot=0, tLib=0, tTot=0, ahora=new Date();
+                todasLasMesas.forEach(m => {
+                    if (m.zona === 'Interior') iTot++;
+                    if (m.zona === 'Terraza') tTot++;
+                    let choca = reservasDeHoy.some(r => r.mesa_id === m.id && Math.abs((ahora - new Date(`${hoy}T${r.hora_inicio}`)) / 60000) < 150);
+                    if (m.estado_actual === 'libre' && !choca) { if (m.zona === 'Interior') iLib++; else tLib++; }
+                });
+
+                document.getElementById('num-interior').innerHTML = `<span class="${iLib===0?'text-red-500':'text-white'}">${iLib}</span> <span class="text-4xl text-gray-500">/ ${iTot}</span>`;
+                document.getElementById('num-terraza').innerHTML = `<span class="${tLib===0?'text-red-500':'text-white'}">${tLib}</span> <span class="text-4xl text-gray-500">/ ${tTot}</span>`;
+                document.getElementById('estado').innerText = "✓ ONLINE"; document.getElementById('estado').className = "text-green-400 font-bold text-sm uppercase";
+            } catch (e) { document.getElementById('estado').innerText = "❌ RECONECTANDO..."; }
+        }
+
+        async function ocupar(zona) {
+            const btn = document.getElementById(zona==='Interior'?'btn-oc-int':'btn-oc-ter');
+            const txt = btn.innerText; btn.innerText = "⏳...";
+            const hoy = new Date().toISOString().split('T')[0]; const ahora = new Date();
+            let m = todasLasMesas.find(mesa => mesa.zona === zona && mesa.estado_actual === 'libre' && !reservasDeHoy.some(r => r.mesa_id === mesa.id && Math.abs((ahora - new Date(`${hoy}T${r.hora_inicio}`)) / 60000) < 150));
+            if (!m) { btn.innerText = txt; return alert(`❌ ¡No quedan mesas libres en ${zona}!`); }
+            await window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY).from('mesas').update({ estado_actual: 'ocupada' }).eq('id', m.id);
+            await actualizarDatos(); btn.innerText = txt;
+        }
+
+        async function liberar(zona) {
+            const btn = document.getElementById(zona==='Interior'?'btn-lib-int':'btn-lib-ter');
+            const txt = btn.innerText; btn.innerText = "⏳...";
+            let mLib = todasLasMesas.find(mesa => mesa.zona === zona && mesa.estado_actual === 'ocupada');
+            if (mLib) await window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY).from('mesas').update({ estado_actual: 'libre' }).eq('id', mLib.id);
+            else {
+                let hoy = new Date().toISOString().split('T')[0], ahora = new Date();
+                let rEstorba = reservasDeHoy.find(r => todasLasMesas.find(mx => mx.id === r.mesa_id)?.zona === zona && Math.abs((ahora - new Date(`${hoy}T${r.hora_inicio}`)) / 60000) < 150);
+                if (rEstorba) await window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY).from('reservas').delete().eq('id', rEstorba.id);
+                else { btn.innerText = txt; return alert(`⚠️ Todo vacío en ${zona}.`); }
+            }
+            await actualizarDatos(); btn.innerText = txt;
+        }
+
+        async function descargarListaReservas() {
+            const f = document.getElementById('input-fecha-lista').value;
+            const c = document.getElementById('caja-reservas');
+            try {
+                const { data: res } = await window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY).from('reservas').select('hora_inicio, nombre_cliente, telefono_cliente, codigo_secreto, mesas(zona)').eq('fecha', f).order('hora_inicio', { ascending: true });
+                if (!res || res.length === 0) return c.innerHTML = `<div class="bg-gray-800 p-6 rounded-xl border border-gray-600 text-center"><p class="text-xl font-bold text-gray-400">No hay reservas para este día.</p></div>`;
+                let html = "";
+                res.forEach(r => {
+                    let color = r.mesas?.zona === 'Interior' ? 'text-blue-400' : 'text-orange-400';
+                    html += `<div class="bg-gray-800 p-4 rounded-xl border-l-4 border-red-600 mb-3"><div class="flex justify-between border-b border-gray-700 pb-2 mb-2"><span class="text-2xl font-black text-red-500">${r.hora_inicio.substring(0,5)}</span><span class="text-lg font-black uppercase ${color}">${r.mesas?.zona}</span></div><p class="text-xl font-black text-white uppercase">${r.nombre_cliente}</p><p class="text-gray-400 font-bold">📞 ${r.telefono_cliente}</p><p class="text-gray-500 text-sm mt-1">Ref: ${r.codigo_secreto}</p></div>`;
+                });
+                c.innerHTML = html;
+            } catch (e) { c.innerHTML = '<p class="text-red-500">❌ Error al descargar reservas.</p>'; }
+        }
+
+        setInterval(actualizarDatos, 5000); setTimeout(actualizarDatos, 500);
+    </script>
+</body>
+</html>
