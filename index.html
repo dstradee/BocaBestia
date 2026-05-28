@@ -16,10 +16,9 @@
                     colors: {
                         'brand-dark': '#121212',
                         'brand-gray': '#1A1A1A',
-                        'brand-neon': '#FF1A1A',
+                        'brand-neon': '#A12727', // AQUÍ ESTÁ EL COLOR ROJO PRINCIPAL
                         'brand-amber': '#FF9F00',
                         'brand-text': '#E0E0E0',
-                        // Sobrescribimos el amarillo para que el JS de copiar funcione con los nuevos tonos
                         yellow: { 400: '#FF9F00', 500: '#E68F00' }
                     },
                     fontFamily: {
@@ -27,7 +26,8 @@
                         'montserrat': ['Montserrat', 'sans-serif']
                     },
                     boxShadow: {
-                        'neon': '0 0 10px rgba(255, 26, 26, 0.6), 0 0 20px rgba(255, 26, 26, 0.4)',
+                        // Aquí el color en formato RGB (161, 39, 39) que corresponde a #A12727
+                        'neon': '0 0 10px rgba(161, 39, 39, 0.6), 0 0 20px rgba(161, 39, 39, 0.4)',
                         'neon-amber': '0 0 10px rgba(255, 159, 0, 0.6), 0 0 20px rgba(255, 159, 0, 0.4)'
                     }
                 }
@@ -36,16 +36,20 @@
     </script>
     <style> 
         body { margin: 0; padding: 0; background-color: #121212; }
-        /* Forzamos bordes afilados e industriales sin romper el JS */
         * { border-radius: 0 !important; }
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
     </style>
 </head>
 <body class="bg-brand-dark text-brand-text font-montserrat relative">
 
-    <header class="bg-brand-gray text-white py-6 px-4 text-center border-b-4 border-brand-neon">
-        <h1 class="text-5xl md:text-6xl font-anton uppercase tracking-widest text-brand-neon drop-shadow-[0_0_15px_rgba(255,26,26,0.6)]">Boca Bestia</h1>
-        <p class="mt-2 font-bold uppercase text-sm md:text-base text-brand-text tracking-widest">Reserva tu mesa al instante</p>
+    <header class="bg-brand-gray text-white py-6 px-4 text-center border-b-4 border-brand-neon flex flex-col items-center">
+        <!-- IMAGEN DEL LOGO CON LA NUEVA SOMBRA -->
+        <img src="https://raw.githubusercontent.com/dstradee/BocaBestia/32837c3ebd461a7c1b0f70992f8a3e4dbf88f3e4/LOGO%20CABECERA.png" alt="Boca Bestia Logo" class="w-[280px] md:w-[350px] max-w-full h-auto drop-shadow-[0_0_10px_rgba(161,39,39,0.3)] mb-2">
+        
+        <p class="hidden mt-3 font-anton uppercase text-xl md:text-2xl text-brand-text tracking-widest">Reservas</p>
+
+        <h1 class="hidden text-5xl md:text-6xl font-anton uppercase tracking-widest text-brand-neon drop-shadow-[0_0_15px_rgba(161,39,39,0.6)]">Boca Bestia</h1>
+        <p class="hidden mt-2 font-bold uppercase text-sm md:text-base text-brand-text tracking-widest">Reserva tu mesa al instante</p>
     </header>
 
     <main class="max-w-xl mx-auto pt-8 px-4 pb-10">
@@ -58,14 +62,12 @@
                 </button>
             </div>
 
-            <!-- VISTA SUSPENDIDA (Kill Switch) -->
             <div id="vista-suspendida" class="hidden text-center py-10 space-y-4">
                 <div class="text-6xl mb-4">🚧</div>
                 <h3 class="text-3xl font-anton uppercase text-brand-neon">Servicio No Disponible</h3>
                 <p class="text-brand-text font-bold">El sistema de reservas online se encuentra temporalmente desactivado para este local.</p>
             </div>
 
-            <!-- VISTA 1: FORMULARIO -->
             <div id="vista-reservar" class="space-y-4 font-bold text-sm md:text-base">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -95,12 +97,11 @@
                     <input type="tel" id="input-telefono" placeholder="Ej: 600123456" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required class="w-full bg-brand-dark border border-gray-700 p-3 text-white placeholder-gray-600 focus:outline-none focus:border-brand-neon focus:ring-1 focus:ring-brand-neon transition">
                 </div>
 
-                <button onclick="procesarReserva()" id="btn-reservar" class="mt-8 w-full bg-brand-neon text-white font-anton text-3xl py-4 shadow-neon uppercase active:scale-95 transition tracking-widest border-none hover:bg-red-600">
+                <button onclick="procesarReserva()" id="btn-reservar" class="mt-8 w-full bg-brand-neon text-white font-anton text-3xl py-4 shadow-neon uppercase active:scale-95 transition tracking-widest border-none hover:opacity-80">
                     Confirmar Reserva
                 </button>
             </div>
 
-            <!-- VISTA 2: BUSCAR IDENTIFICADOR -->
             <div id="vista-modificar" class="hidden space-y-4 font-bold">
                 <p class="text-sm text-gray-400 mb-4 text-center md:text-left">Introduce tu identificador de reserva <b>todo junto</b> (sin espacios ni tildes):</p>
                 <div>
@@ -109,12 +110,11 @@
                 <div class="bg-brand-dark p-3 border border-dashed border-gray-600 text-center text-xl md:text-2xl font-anton tracking-widest break-words min-h-[60px] flex items-center justify-center shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]">
                     <span id="preview-colores" class="text-gray-600 text-sm font-montserrat tracking-normal">Tu código se pintará aquí...</span>
                 </div>
-                <button id="btn-buscar" onclick="buscarReserva()" class="mt-6 w-full bg-brand-neon text-white font-anton text-3xl py-4 shadow-neon uppercase active:scale-95 transition tracking-widest border-none hover:bg-red-600">
+                <button id="btn-buscar" onclick="buscarReserva()" class="mt-6 w-full bg-brand-neon text-white font-anton text-3xl py-4 shadow-neon uppercase active:scale-95 transition tracking-widest border-none hover:opacity-80">
                     Buscar mi reserva
                 </button>
             </div>
 
-            <!-- VISTA 3: GESTIONAR -->
             <div id="vista-gestion" class="hidden space-y-4 font-bold">
                 <div class="bg-brand-dark p-4 border border-gray-700 text-center mb-4 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]">
                     <p class="text-xs text-gray-500 uppercase tracking-widest mb-1">Reserva Actual</p>
@@ -146,7 +146,8 @@
 
     <!-- MODAL RESERVA HECHA -->
     <div id="modal-identificador" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-50">
-        <div class="bg-brand-gray border-2 border-brand-neon p-6 md:p-8 max-w-md w-full text-center shadow-[0_0_40px_rgba(255,26,26,0.5)]">
+        <!-- SOMBRA ADAPTADA AL NUEVO ROJO -->
+        <div class="bg-brand-gray border-2 border-brand-neon p-6 md:p-8 max-w-md w-full text-center shadow-[0_0_40px_rgba(161,39,39,0.5)]">
             <h3 class="text-4xl md:text-5xl font-anton text-brand-neon uppercase mb-2 tracking-wide">¡Confirmada!</h3>
             <p class="font-montserrat font-bold text-gray-300 text-sm md:text-base mb-6 leading-tight">Guarda este identificador, hazle una captura de pantalla para poder modificar o cancelar tu reserva:</p>
             <div class="text-2xl md:text-4xl font-anton bg-brand-dark p-4 border border-gray-700 tracking-[0.1em] break-words mb-6 flex justify-center flex-wrap shadow-[inset_0_0_15px_rgba(0,0,0,0.8)]">
@@ -161,12 +162,10 @@
         </div>
     </div>
 
-
     <!-- =================================================================== -->
-    <!-- BLOQUE 1: CÓDIGO VISUAL (NUNCA FALLA)                               -->
+    <!-- LÓGICA DE JAVASCRIPT (INTACTA)                                      -->
     <!-- =================================================================== -->
     <script>
-        // Variables globales necesarias para lo visual y la BD
         let bloqueosGlobales = [];
         let diasCerradosGlobales = [];
         let miReservaActual = null;
@@ -261,15 +260,8 @@
             selectHora.innerHTML = opcionesHTML;
         }
 
-        // CARGAMOS LA INTERFAZ AL INSTANTE (Estético siempre funciona)
         actualizarHoras('input-fecha', 'input-hora');
 
-    </script>
-
-    <!-- =================================================================== -->
-    <!-- BLOQUE 2: LÓGICA DE BD (AISLADO PARA QUE NO ROMPA LO VISUAL)        -->
-    <!-- =================================================================== -->
-    <script>
         const SUPABASE_URL = 'https://ydstfbsqbmmygnojmmss.supabase.co'; 
         const SUPABASE_ANON_KEY = 'sb_publishable_aZzqNb41ir-mSng2lMUCPg_pudR7IAA';
         const TELEGRAM_BOT_TOKEN = '8789184996:AAFV2JsCWBcXo-IhC0YYzQuEhuhWPUgHK6k';
@@ -303,9 +295,7 @@
                 if (respBloqueos.data) bloqueosGlobales = respBloqueos.data;
                 if (respDias.data && respDias.data.dias) diasCerradosGlobales = respDias.data.dias.split(',');
 
-                // Re-calculamos las horas ahora que tenemos los días cerrados de la BD
                 actualizarHoras('input-fecha', 'input-hora');
-
             } catch (err) {
                 console.warn("Fallo de red conectando con BD de configuración. Modo offline visual.");
             }
@@ -334,7 +324,7 @@
 
             try {
                 const sp = getSupabase();
-                const msg = `🍔 *NUEVA RESERVA BOCA BESTIA* 🍔\n👤 *Nombre:* ${nombre}\n📞 *Tlf:* ${telefono}\n📅 *Día:* ${fecha}\n⏰ *Hora:* ${hora}\n📍 *Zona:* ${zona}\n🔑 *ID:* ${identificadorCompleto}`;
+                const msg = `🍔 *NUEVA RESERVA* 🍔\n👤 *Nombre:* ${nombre}\n📞 *Tlf:* ${telefono}\n📅 *Día:* ${fecha}\n⏰ *Hora:* ${hora}\n📍 *Zona:* ${zona}\n🔑 *ID:* ${identificadorCompleto}`;
                 fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: msg, parse_mode: 'Markdown' }) });
 
                 const { data: mesasZona, error: errMesas } = await sp.from('mesas').select('id').eq('zona', zona);
@@ -446,9 +436,7 @@
             } catch (e) { alert("❌ Error al cancelar."); btn.innerHTML = 'Cancelar Reserva'; btn.disabled = false; }
         }
 
-        // Le damos medio segundo a la página para que respire y cargue el internet antes de pedir datos
         setTimeout(prepararEntorno, 500);
-
     </script>
 </body>
 </html>
