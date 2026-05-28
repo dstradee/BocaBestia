@@ -16,7 +16,7 @@
                     colors: {
                         'brand-dark': '#121212',
                         'brand-gray': '#1A1A1A',
-                        'brand-neon': '#A12727', // AQUÍ ESTÁ EL COLOR ROJO PRINCIPAL
+                        'brand-neon': '#A12727', 
                         'brand-amber': '#FF9F00',
                         'brand-text': '#E0E0E0',
                         yellow: { 400: '#FF9F00', 500: '#E68F00' }
@@ -26,7 +26,6 @@
                         'montserrat': ['Montserrat', 'sans-serif']
                     },
                     boxShadow: {
-                        // Aquí el color en formato RGB (161, 39, 39) que corresponde a #A12727
                         'neon': '0 0 10px rgba(161, 39, 39, 0.6), 0 0 20px rgba(161, 39, 39, 0.4)',
                         'neon-amber': '0 0 10px rgba(255, 159, 0, 0.6), 0 0 20px rgba(255, 159, 0, 0.4)'
                     }
@@ -43,7 +42,7 @@
 <body class="bg-brand-dark text-brand-text font-montserrat relative">
 
     <header class="bg-brand-gray text-white py-6 px-4 text-center border-b-4 border-brand-neon flex flex-col items-center">
-        <!-- IMAGEN DEL LOGO CON LA NUEVA SOMBRA -->
+        <!-- IMAGEN DEL LOGO -->
         <img src="https://raw.githubusercontent.com/dstradee/BocaBestia/32837c3ebd461a7c1b0f70992f8a3e4dbf88f3e4/LOGO%20CABECERA.png" alt="Boca Bestia Logo" class="w-[280px] md:w-[350px] max-w-full h-auto drop-shadow-[0_0_10px_rgba(161,39,39,0.3)] mb-2">
         
         <p class="hidden mt-3 font-anton uppercase text-xl md:text-2xl text-brand-text tracking-widest">Reservas</p>
@@ -146,7 +145,6 @@
 
     <!-- MODAL RESERVA HECHA -->
     <div id="modal-identificador" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-50">
-        <!-- SOMBRA ADAPTADA AL NUEVO ROJO -->
         <div class="bg-brand-gray border-2 border-brand-neon p-6 md:p-8 max-w-md w-full text-center shadow-[0_0_40px_rgba(161,39,39,0.5)]">
             <h3 class="text-4xl md:text-5xl font-anton text-brand-neon uppercase mb-2 tracking-wide">¡Confirmada!</h3>
             <p class="font-montserrat font-bold text-gray-300 text-sm md:text-base mb-6 leading-tight">Guarda este identificador, hazle una captura de pantalla para poder modificar o cancelar tu reserva:</p>
@@ -163,11 +161,13 @@
     </div>
 
     <!-- =================================================================== -->
-    <!-- LÓGICA DE JAVASCRIPT (INTACTA)                                      -->
+    <!-- LÓGICA DE JAVASCRIPT                                                -->
     <!-- =================================================================== -->
     <script>
         let bloqueosGlobales = [];
         let diasCerradosGlobales = [];
+        let horariosGlobales = [];      // NUEVO: Array para guardar los horarios de la semana
+        let bloqueosHorasGlobales = []; // NUEVO: Array para guardar horas bloqueadas sueltas
         let miReservaActual = null;
         let miZonaActual = null;
 
@@ -212,6 +212,9 @@
             }
         }
 
+        // =========================================================
+        // NUEVA FUNCIÓN MEJORADA: ACTUALIZAR HORAS CON INTELIGENCIA
+        // =========================================================
         function actualizarHoras(idFecha, idHora) {
             const fechaInput = document.getElementById(idFecha);
             const selectHora = document.getElementById(idHora);
@@ -229,7 +232,8 @@
             if (!fechaInput.value || fechaInput.value < fechaMinima) { fechaInput.value = fechaMinima; }
 
             const fechaSeleccionada = fechaInput.value;
-            const fechaDate = new Date(fechaSeleccionada);
+            // Forzamos que la fecha se lea correctamente sin problemas de zona horaria
+            const fechaDate = new Date(fechaSeleccionada + 'T00:00:00'); 
             const diaSemana = fechaDate.getDay().toString();
 
             let estaCerradoSemanal = diasCerradosGlobales.includes(diaSemana);
@@ -245,17 +249,58 @@
             let esHoyReal = (fechaSeleccionada === hoyRealIso);
             let opcionesHTML = "";
 
-            for(let h = 8; h <= 23; h++) {
-                let minutosPosibles = (h === 23) ? ['00'] : ['00', '15', '30', '45'];
+            const horarioDia = horariosGlobales.find(h => h.dia_semana.toString() === diaSemana);
+
+            // Función para pasar la hora a minutos y hacer cálculos fáciles
+            function timeToMins(t) {
+                if(!t) return null;
+                let p = t.split(':');
+                return parseInt(p[0]) * 60 + parseInt(p[1]);
+            }
+
+            // Repasamos todo el día de 00:00 a 23:45
+            for(let h = 0; h <= 23; h++) {
+                let minutosPosibles = ['00', '15', '30', '45'];
                 for(let m of minutosPosibles) {
-                    let minutosOpcion = (h * 60) + parseInt(m);
+                    let timeEnMins = (h * 60) + parseInt(m);
                     let minutosAhora = (horaReal.getHours() * 60) + horaReal.getMinutes();
-                    if (esHoyReal && minutosOpcion <= minutosAhora) continue;
+                    
+                    // Si es hoy, no dejamos reservar en el pasado
+                    if (esHoyReal && timeEnMins <= minutosAhora) continue;
+
+                    // FILTRO 1: ¿Está dentro de los Turnos configurados por el Manager?
+                    if (horariosGlobales.length > 0) {
+                        if (!horarioDia) continue; // Si la base de datos tiene datos pero este día no, es que cierra.
+                        
+                        let inT1 = false; let inT2 = false;
+                        
+                        let a1M = timeToMins(horarioDia.apertura_1); let c1M = timeToMins(horarioDia.cierre_1);
+                        if (a1M !== null && c1M !== null && timeEnMins >= a1M && timeEnMins <= c1M) inT1 = true;
+                        
+                        let a2M = timeToMins(horarioDia.apertura_2); let c2M = timeToMins(horarioDia.cierre_2);
+                        if (a2M !== null && c2M !== null && timeEnMins >= a2M && timeEnMins <= c2M) inT2 = true;
+
+                        // Si la hora que estamos comprobando no está en el Turno 1 ni en el Turno 2, la ignoramos.
+                        if (!inT1 && !inT2) continue;
+                    } else {
+                        // Si el restaurante aún no ha tocado los horarios en el Manager, dejamos el horario base antiguo.
+                        if(h < 8 || (h === 23 && m !== '00')) continue;
+                    }
+
+                    // FILTRO 2: ¿Hay un bloqueo de horas sueltas justo ahora?
+                    let bloqueadoHora = bloqueosHorasGlobales.some(b => {
+                        if (b.fecha !== fechaSeleccionada) return false;
+                        let bIni = timeToMins(b.hora_inicio);
+                        let bFin = timeToMins(b.hora_fin);
+                        return (timeEnMins >= bIni && timeEnMins <= bFin);
+                    });
+                    if (bloqueadoHora) continue; // Si está bloqueada, saltamos esta hora.
 
                     let horaFormateada = h < 10 ? '0' + h : h; 
                     opcionesHTML += `<option value="${horaFormateada}:${m}">${horaFormateada}:${m}</option>`;
                 }
             }
+            
             if (opcionesHTML === "") opcionesHTML = `<option value="">Cerrado / Sin horas</option>`;
             selectHora.innerHTML = opcionesHTML;
         }
@@ -287,15 +332,22 @@
                     return; 
                 }
 
-                const [respBloqueos, respDias] = await Promise.all([
+                // Cargamos TODOS los datos de golpe: bloqueos, días, horarios y horas bloqueadas
+                const [respBloqueos, respDias, respHorarios, respBloqueosHoras] = await Promise.all([
                     sp.from('bloqueos').select('*'),
-                    sp.from('dias_cerrados').select('dias').eq('id', 1).single()
+                    sp.from('dias_cerrados').select('dias').eq('id', 1).single(),
+                    sp.from('horarios_semana').select('*'),
+                    sp.from('bloqueos_horas').select('*')
                 ]);
 
                 if (respBloqueos.data) bloqueosGlobales = respBloqueos.data;
                 if (respDias.data && respDias.data.dias) diasCerradosGlobales = respDias.data.dias.split(',');
+                if (respHorarios.data) horariosGlobales = respHorarios.data;
+                if (respBloqueosHoras.data) bloqueosHorasGlobales = respBloqueosHoras.data;
 
+                // Re-calculamos las horas ahora que tenemos toda la inteligencia de la BD
                 actualizarHoras('input-fecha', 'input-hora');
+
             } catch (err) {
                 console.warn("Fallo de red conectando con BD de configuración. Modo offline visual.");
             }
