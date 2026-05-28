@@ -80,7 +80,7 @@
             <!-- PESTAÑA 2: MESAS -->
             <div id="vista-mesas" class="hidden space-y-6">
                 <div class="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded text-yellow-800 font-bold shadow mb-6">
-                    💡 Añade o quita mesas de tu local de forma instantánea.
+                    💡 Añade o quita mesas de tu local de forma instantánea. Toca en el + o - para elegir la cantidad.
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white p-6 rounded-xl border-2 border-black shadow-[4px_4px_0px_#000] text-center">
@@ -242,9 +242,6 @@
             } catch (e) {}
         }
 
-        // =========================================================
-        // NUEVO: FUNCIONES DE DÍAS DE DESCANSO
-        // =========================================================
         async function cargarDiasCerrados() {
             try {
                 const sp = getSupabase();
@@ -275,9 +272,6 @@
             btn.innerText = "Guardar Días de Descanso";
         }
 
-        // =========================================================
-        // FUNCIONES DE BLOQUEOS REPARADAS
-        // =========================================================
         async function cargarBloqueos() {
             const lista = document.getElementById('lista-bloqueos');
             try {
@@ -345,9 +339,6 @@
             }
         }
 
-        // ==========================================
-        // RESTO DE FUNCIONES (INTACTAS)
-        // ==========================================
         async function cargarAnalitica() {
             try {
                 const sp = getSupabase();
@@ -393,18 +384,63 @@
             }
         }
 
-        async function modificarMesas(zona, cantidad) {
-            if(!confirm(`¿Seguro que quieres ${cantidad > 0 ? 'añadir' : 'quitar'} 1 mesa en ${zona}?`)) return;
+        // ==========================================
+        // NUEVA FUNCIÓN PARA AÑADIR/QUITAR MESAS
+        // ==========================================
+        async function modificarMesas(zona, tipo) {
+            const accion = tipo > 0 ? 'AÑADIR' : 'QUITAR';
+            const numStr = prompt(`¿Cuántas mesas quieres ${accion} en ${zona}?\nEscribe un número:`, "1");
+            
+            if (numStr === null || numStr.trim() === "") return;
+            
+            const cantidad = parseInt(numStr);
+            if (isNaN(cantidad) || cantidad <= 0) {
+                return alert("⚠️ Introduce un número válido mayor que 0.");
+            }
+
             try {
                 const sp = getSupabase();
-                if(cantidad > 0) {
-                    await sp.from('mesas').insert([{ zona: zona, estado_actual: 'libre' }]);
+                
+                if (tipo > 0) {
+                    // AÑADIR MESAS
+                    let arrayMesas = [];
+                    for(let i = 0; i < cantidad; i++) {
+                        arrayMesas.push({ zona: zona, estado_actual: 'libre' });
+                    }
+                    
+                    const { error } = await sp.from('mesas').insert(arrayMesas);
+                    if(error) {
+                        console.error("Error BD:", error);
+                        return alert("❌ No se pudieron añadir las mesas.\n\nMotivo técnico: " + error.message);
+                    }
                 } else {
-                    const { data: mesasZona } = await sp.from('mesas').select('id').eq('zona', zona).eq('estado_actual', 'libre').limit(1);
-                    if(mesasZona && mesasZona.length > 0) { await sp.from('mesas').delete().eq('id', mesasZona[0].id); } else { return alert("No se puede borrar. Asegúrate de que haya alguna mesa libre."); }
+                    // QUITAR MESAS
+                    const { data: mesasLibres, error: errSelect } = await sp.from('mesas')
+                        .select('id')
+                        .eq('zona', zona)
+                        .eq('estado_actual', 'libre')
+                        .limit(cantidad);
+                        
+                    if (errSelect) throw errSelect;
+                    
+                    if(!mesasLibres || mesasLibres.length < cantidad) {
+                        return alert(`⚠️ Solo hay ${mesasLibres ? mesasLibres.length : 0} mesas libres en ${zona}. No puedes borrar ${cantidad}.`);
+                    }
+                    
+                    const ids = mesasLibres.map(m => m.id);
+                    const { error } = await sp.from('mesas').delete().in('id', ids);
+                    if(error) {
+                        console.error("Error BD:", error);
+                        return alert("❌ No se pudieron quitar las mesas.\n\nMotivo técnico: " + error.message);
+                    }
                 }
-                cargarMesas(); 
-            } catch (error) { alert("Error de conexión al modificar la mesa."); }
+                
+                cargarMesas(); // Recarga los números grandes
+                
+            } catch (error) { 
+                console.error(error);
+                alert("❌ Error de conexión al intentar modificar las mesas."); 
+            }
         }
 
         async function exportarExcel() {
